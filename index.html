@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mr. Rocha’s English Class: Talking About Movies</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: '#3b82f6',
+                        secondary: '#8b5cf6',
+                        darkBg: '#0f172a',
+                        darkCard: '#1e293b'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Custom CSS -->
+    <style>
+        body {
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        .shiny-border {
+            border: 2px solid #3b82f6 !important;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.8) !important;
+            outline: none;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .shiny-border:focus {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 1) !important;
+        }
+
+        /* Validation Styles */
+        .correct-input {
+            border-color: #22c55e !important;
+            background-color: #dcfce7 !important;
+            color: #14532d !important; /* Dark green for light mode */
+            box-shadow: 0 0 10px rgba(34, 197, 94, 0.8) !important;
+        }
+        .dark .correct-input {
+            background-color: #052e16 !important;
+            color: #4ade80 !important; /* Light green for dark mode */
+            border-color: #4ade80 !important;
+        }
+
+        .incorrect-input {
+            border-color: #ef4444 !important;
+            background-color: #fee2e2 !important;
+            color: #7f1d1d !important; /* Dark red for light mode */
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.8) !important;
+        }
+        .dark .incorrect-input {
+            background-color: #450a0a !important;
+            color: #f87171 !important; /* Light red for dark mode */
+            border-color: #f87171 !important;
+        }
+
+        #puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 2px;
+            width: 100%;
+            /* Doubled from 400px to 800px */
+            max-width: 800px;
+            aspect-ratio: 1/1;
+            margin: 0 auto;
+            background: #cbd5e1;
+            border: 4px solid #334155;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .dark #puzzle-grid { border-color: #64748b; background: #1e293b; }
+
+        .puzzle-piece {
+            width: 100%;
+            height: 100%;
+            background-image: url('Image2.jpg');
+            background-size: 500% 500%;
+            cursor: grab;
+            user-select: none;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .puzzle-piece.fallback-bg {
+            background-image: url('https://placehold.co/1000x1000/3b82f6/ffffff?text=Image+Missing');
+        }
+        .puzzle-piece:active { cursor: grabbing; }
+        .puzzle-piece.drag-over { border: 3px dashed #f59e0b; opacity: 0.7; z-index: 10; }
+
+        .word-bank {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            min-height: 50px;
+            padding: 0.75rem;
+            border: 2px dashed #94a3b8;
+            border-radius: 0.5rem;
+            background: rgba(0,0,0,0.05);
+        }
+        .dark .word-bank { border-color: #475569; background: rgba(255,255,255,0.05); }
+        
+        .draggable-word {
+            padding: 0.35rem 0.85rem;
+            background: #3b82f6;
+            color: white;
+            border-radius: 9999px;
+            cursor: grab;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .dark .draggable-word { background: #2563eb; }
+        .draggable-word:active { cursor: grabbing; }
+        
+        .dropzone {
+            display: inline-flex;
+            min-width: 60px;
+            min-height: 30px;
+            border-bottom: 2px dashed #64748b;
+            padding: 0 5px;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+            margin: 0 5px;
+            background: rgba(0,0,0,0.02);
+        }
+        .dropzone.drag-over { background: rgba(59, 130, 246, 0.2); border-color: #3b82f6; }
+
+        .media-container { width: 100%; max-width: 800px; margin: 0 auto; border-radius: 0.5rem; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .media-container img, .media-container video { width: 100%; height: auto; display: block; }
+        
+        @media print {
+            body { background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            .activity-section { page-break-inside: avoid; margin-bottom: 2rem; display: block !important; }
+            #results-page { display: block !important; }
+            .shiny-border { border: 1px solid #000 !important; box-shadow: none !important; }
+            canvas { max-width: 100% !important; }
+        }
+
+        #toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 1rem 2rem;
+            border-radius: 9999px;
+            z-index: 9999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5);
+            font-weight: 600;
+        }
+        #toast.show { opacity: 1; pointer-events: auto; }
+        
+        /* Fix inputs text color for dark mode */
+        input, textarea, select {
+            color: #0f172a;
+        }
+        .dark input, .dark textarea, .dark select {
+            color: #f8fafc;
+            background-color: #1e293b;
+        }
+        .dark select option {
+            background-color: #1e293b;
+            color: #f8fafc;
+        }
+    </style>
+</head>
+
+<body class="bg-slate-50 text-slate-800 dark:bg-darkBg dark:text-slate-100 min-h-screen flex flex-col">
+
+    <div id="toast">Message</div>
+
+    <header class="sticky top-0 z-50 bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 shadow-md no-print">
+        <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+            <h1 class="text-xl md:text-2xl font-extrabold text-primary text-center md:text-left drop-shadow-sm">
+                <i class="fa-solid fa-film mr-2 text-secondary"></i> Mr. Rocha’s English Class: Talking About Movies
+            </h1>
+            
+            <div class="flex items-center justify-center">
+                <button id="theme-toggle" class="p-3 rounded-full bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors shadow-sm text-lg" title="Toggle Dark/Light Mode">
+                    <i class="fa-solid fa-moon dark:hidden text-slate-700"></i>
+                    <i class="fa-solid fa-sun hidden dark:block text-yellow-400"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="w-full bg-slate-200 dark:bg-slate-700 h-2">
+            <div id="progress-bar" class="bg-primary h-2 transition-all duration-500 ease-out" style="width: 0%"></div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-6xl mx-auto w-full px-4 py-8 relative">
+        
+        <div id="student-info" class="mb-8 p-6 bg-white dark:bg-darkCard rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 flex flex-col md:flex-row gap-6 items-center justify-between no-print">
+            <div class="w-full md:w-1/2">
+                <label for="student-name" class="block text-sm font-bold mb-2 text-slate-700 dark:text-slate-300">Student Name</label>
+                <input type="text" id="student-name" placeholder="Enter your full name" class="w-full p-3 rounded-lg shiny-border font-medium bg-white dark:bg-slate-800">
+            </div>
+            <div class="w-full md:w-1/2">
+                <label for="student-date" class="block text-sm font-bold mb-2 text-slate-700 dark:text-slate-300">Date</label>
+                <input type="date" id="student-date" class="w-full p-3 rounded-lg shiny-border font-medium bg-white dark:bg-slate-800 cursor-pointer">
+            </div>
+        </div>
+
+        <div id="activities-wrapper">
+            <!-- Activities Injected via JS -->
+        </div>
+
+        <div id="results-section" class="hidden">
+            <div class="bg-white dark:bg-darkCard rounded-2xl shadow-2xl p-8 mb-8 border-t-8 border-primary print:border-t-0 print:shadow-none print:p-0">
+                <h2 class="text-4xl font-extrabold mb-8 text-center text-slate-800 dark:text-white"><i class="fa-solid fa-trophy text-yellow-500 mr-3"></i> Your Results</h2>
+                
+                <div class="flex flex-col md:flex-row gap-10 items-center justify-center mb-12">
+                    <div class="text-center bg-blue-50 dark:bg-slate-800 p-8 rounded-full border-8 border-primary w-56 h-56 flex flex-col items-center justify-center shadow-lg">
+                        <span class="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">Total Score</span>
+                        <span id="final-score-display" class="text-5xl font-black text-primary">0%</span>
+                    </div>
+                    <div class="flex-grow w-full max-w-2xl bg-slate-50 dark:bg-slate-800 p-4 rounded-xl shadow-inner">
+                        <canvas id="resultsChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="mb-10 bg-slate-50 dark:bg-slate-800 p-8 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <h3 class="text-2xl font-bold mb-6 border-b-2 border-slate-200 dark:border-slate-700 pb-3"><i class="fa-solid fa-lightbulb text-amber-500 mr-2"></i> Feedback & Recommendations</h3>
+                    <p id="overall-feedback" class="text-xl mb-8 font-medium text-slate-700 dark:text-slate-200"></p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <ul id="recommendations-list" class="list-none space-y-4 col-span-1 md:col-span-2 text-lg text-slate-700 dark:text-slate-300 font-medium">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="text-center no-print flex flex-col sm:flex-row justify-center gap-4">
+                    <button onclick="window.print()" class="px-8 py-4 bg-secondary hover:bg-purple-600 text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-1 text-lg">
+                        <i class="fa-solid fa-print mr-2"></i> Print Results
+                    </button>
+                    <button onclick="location.reload()" class="px-8 py-4 bg-slate-700 hover:bg-slate-800 text-white font-bold rounded-xl shadow-lg transition-transform hover:-translate-y-1 text-lg">
+                        <i class="fa-solid fa-rotate-right mr-2"></i> Start Over
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        const showToast = (msg) => {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3500);
+        };
+
+        const speakText = (text) => {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.85;
+                window.speechSynthesis.speak(utterance);
+            } else {
+                showToast("Text-to-speech is not supported in this browser.");
+            }
+        };
+
+        const imgErr = `onerror="this.onerror=null; this.src='https://placehold.co/800x600/334155/ffffff?text=Image+Missing';"`
+        const vidErr = `onerror="this.parentElement.innerHTML='<div class=\\'p-10 text-center text-lg font-bold bg-slate-200 dark:bg-slate-700 rounded-lg\\'>Video1.mp4 is missing.</div>'"`
+        const audErr = `onerror="this.parentElement.innerHTML='<div class=\\'p-4 text-center font-bold text-red-500\\'>Audio1.mp3 missing</div>'"`
+
+        let currentActivity = 0; 
+        const totalActivities = 11;
+        let activityScores = new Array(totalActivities + 1).fill(null); 
+        let puzzleTimerInterval;
+        let puzzleSeconds = 0;
+
+        const data = {
+            act4: [
+                { p: "The action movie is exciting.", ans: "The action movie was exciting." },
+                { p: "I watch a comedy every weekend.", ans: "I watched a comedy every weekend." },
+                { p: "The actors are very talented.", ans: "The actors were very talented." },
+                { p: "We like the scary horror film.", ans: "We liked the scary horror film." },
+                { p: "She buys tickets for the thriller.", ans: "She bought tickets for the thriller." },
+                { p: "The story has a big surprise.", ans: "The story had a big surprise." },
+                { p: "They go to the cinema.", ans: "They went to the cinema." },
+                { p: "The romance makes me cry.", ans: "The romance made me cry." },
+                { p: "He thinks the sci-fi movie is boring.", ans: "He thought the sci-fi movie was boring." },
+                { p: "The director wins an award.", ans: "The director won an award." },
+                { p: "You see a great documentary.", ans: "You saw a great documentary." },
+                { p: "I feel happy after the musical.", ans: "I felt happy after the musical." }
+            ],
+            act5: {
+                personA: [
+                    "Hey! Did you see any good movies lately?",
+                    "What kind of movie was it?",
+                    "Oh, I love action movies! Was it exciting?",
+                    "Who was the main actor?",
+                    "I think he is very talented. Did he do his own stunts?",
+                    "Wow, that is brave! Was the story good?",
+                    "What was the setting?",
+                    "Did it have good special effects?",
+                    "Was it very long?",
+                    "Did you eat anything at the cinema?",
+                    "I always buy popcorn. Was the cinema crowded?",
+                    "Would you recommend it to me?",
+                    "Great! I will go this weekend. Do you want to come again?",
+                    "Awesome. Let's buy the tickets online."
+                ],
+                personB: [
+                    "Yes, I went to the cinema yesterday.",
+                    "It was a fast-paced action movie.",
+                    "Yes, it was thrilling from beginning to end.",
+                    "It starred that famous actor from the superhero films.",
+                    "Yes, he jumped from a real helicopter!",
+                    "The story was simple, but the action was great.",
+                    "It took place in a futuristic city.",
+                    "The explosions looked incredibly real.",
+                    "It was about two hours long.",
+                    "I bought nachos and a large soda.",
+                    "Yes, every seat was full.",
+                    "Definitely, you will love the chase scenes.",
+                    "Sure, I would love to watch it again.",
+                    "Good idea, it will save us time."
+                ]
+            },
+            act7: [
+                "The young boy watched an exciting action movie.",
+                "He thought the funny comedy was very entertaining.",
+                "The scary horror film made him jump high.",
+                "He loved the amazing special effects in space.",
+                "The brave hero solved a very difficult mystery.",
+                "The fast cars raced through the busy city.",
+                "He felt happy after the beautiful romantic story.",
+                "The magical fantasy world was full of colors.",
+                "He learned many facts from the nature documentary.",
+                "The brave knight fought a huge green dragon.",
+                "He bought sweet popcorn before the long film.",
+                "The clever detective found the hidden silver key."
+            ],
+            act8Text: `Hi Mariano, How are you? Yesterday, I saw a crime and mystery movie called The Secret in the Old House. It was exciting, dark, and very surprising. The story was about an eleven-year-old boy named Leo. He lived near a large, empty house with a strange garden. One rainy night, Leo saw a tall man enter the house with a heavy black bag. The next morning, a valuable gold necklace was missing from the town museum. Leo wanted to solve the mystery, so he followed some muddy footprints and found a small silver key. His clever dog, Max, helped him find a hidden room under the house. Inside the room, Leo saw the stolen necklace, an old map, and the black bag. He called the police from a safe place. The police arrived quickly and caught the thief. The ending was tense but happy. I liked the brave boy, the loyal dog, and the spooky music. I think you will enjoy this clever movie because you love unusual mysteries. See you soon, Diego`,
+            act8Questions: [
+                { q: "1. Main idea: What is Diego’s email mainly about?", opts: ["A. A difficult school project", "B. An exciting mystery movie he watched", "C. A visit to a town museum", "D. A new dog in his neighborhood"], ans: 1 },
+                { q: "2. Detail: What was missing from the museum?", opts: ["A. A valuable gold necklace", "B. A heavy black bag", "C. A small silver key", "D. An old map"], ans: 0 },
+                { q: "3. Detail: Who helped Leo find the hidden room?", opts: ["A. The police officer", "B. The tall man", "C. His loyal dog, Max", "D. Diego"], ans: 2 },
+                { q: "4. Negative: Which item was NOT found in the hidden room?", opts: ["A. An old map", "B. The stolen necklace", "C. The black bag", "D. A muddy shoe"], ans: 3 },
+                { q: "5. Vocabulary in context: What does spooky most likely mean in “the spooky music”?", opts: ["A. Funny and cheerful", "B. Scary and mysterious", "C. Quiet and slow", "D. Loud and modern"], ans: 1 },
+                { q: "6. Pronoun referent: In “He called the police from a safe place,” who does He refer to?", opts: ["A. Max", "B. The thief", "C. Mariano", "D. Leo"], ans: 3 }
+            ],
+            act9: [
+                { q: "If a movie is predictable, an ___predictable movie is full of surprises.", a: "un" },
+                { q: "To watch a movie again is to ___watch it.", a: "re" },
+                { q: "A showing of a movie before it is released is a ___view.", a: "pre" },
+                { q: "A movie that gives you joy is joy___.", a: "ful" },
+                { q: "A movie with no sound is sound___.", a: "less" },
+                { q: "If an actor speaks in a quiet way, he speaks quiet___.", a: "ly" },
+                { q: "If a story is not believable, it is ___believable.", a: "un" },
+                { q: "If a hero has no fear, he is fear___.", a: "less" },
+                { q: "To build the set again is to ___build it.", a: "re" },
+                { q: "A film full of suspense is suspense___.", a: "ful" },
+                { q: "If the monster moves in a slow manner, it moves slow___.", a: "ly" },
+                { q: "To pay for a ticket before going is to ___pay.", a: "pre" }
+            ],
+            act10: {
+                textParts: [
+                    "Movies are a great way to entertain ourselves. There are many different movie genres. ",
+                    " Action movies are fast and exciting, often featuring car chases and explosions. ",
+                    " These movies aim to make the audience laugh with funny situations and silly characters. On the other hand, horror movies are designed to scare us. ",
+                    " Documentaries are very different because they show real facts and teach us about nature, history, or science. No matter what genre you prefer, watching a movie is always a fun experience."
+                ],
+                draggables: [
+                    "For example, comedy films are very popular.",
+                    "They use dark settings and spooky music.",
+                    "People love going to the cinema on weekends."
+                ],
+                answers: [2, 0, 1]
+            }
+        };
+
+        const generateUI = () => {
+            const wrapper = document.getElementById('activities-wrapper');
+            let html = '';
+
+            const navBtns = (actNum) => `
+                <div class="mt-10 flex justify-between items-center border-t-2 border-slate-200 dark:border-slate-700 pt-6 no-print">
+                    <button onclick="navigate(${actNum - 1})" class="px-6 py-3 rounded-xl bg-slate-300 dark:bg-slate-700 hover:bg-slate-400 dark:hover:bg-slate-600 transition font-bold text-slate-800 dark:text-white ${actNum === 0 ? 'invisible' : ''}">
+                        <i class="fa-solid fa-arrow-left mr-2"></i> Back
+                    </button>
+                    ${actNum > 0 ? `<button onclick="checkAnswers(${actNum})" class="px-8 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold transition shadow-lg text-lg act-check-btn" id="check-btn-${actNum}">
+                        <i class="fa-solid fa-check-circle mr-2"></i> Check Answers
+                    </button>` : ''}
+                    ${actNum < totalActivities ? `<button onclick="navigate(${actNum + 1})" class="px-8 py-3 rounded-xl bg-primary hover:bg-blue-600 text-white font-bold transition shadow-lg text-lg">
+                        Next <i class="fa-solid fa-arrow-right ml-2"></i>
+                    </button>` : `<button onclick="submitWork()" class="px-8 py-3 rounded-xl bg-secondary hover:bg-purple-600 text-white font-bold transition shadow-lg text-lg">
+                        Submit Work <i class="fa-solid fa-paper-plane ml-2"></i>
+                    </button>`}
+                </div>
+            `;
+
+            // Intro
+            html += `<section id="act-0" class="activity-section bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary"><i class="fa-solid fa-door-open mr-2"></i> Introduction</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div class="media-container border-4 border-slate-300 dark:border-slate-600 rounded-xl">
+                        <img src="Image1.jpg" alt="Movies Intro 1" ${imgErr}>
+                    </div>
+                    <div class="media-container border-4 border-slate-300 dark:border-slate-600 rounded-xl">
+                        <img src="Image3.jpg" alt="Movies Intro 2" ${imgErr}>
+                    </div>
+                </div>
+                <p class="text-xl font-medium text-slate-700 dark:text-slate-300">Welcome to Mr. Rocha's English Class! Today we are going to practice talking about movies. Fill in your name and date above, and click Next to begin.</p>
+                ${navBtns(0)}
+            </section>`;
+
+            // Act 1
+            html += `<section id="act-1" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 1: Watch and Take Notes</h2>
+                <p class="mb-6 text-lg font-medium">Watch the video carefully. Take notes and summarize what the video was about.</p>
+                <div class="media-container mb-8 bg-black rounded-xl border-4 border-slate-800">
+                    <video controls class="w-full rounded-lg" ${vidErr}>
+                        <source src="Video1.mp4" type="video/mp4">
+                    </video>
+                </div>
+                <label class="block text-lg font-bold mb-2">Your Notes:</label>
+                <textarea id="act1-notes" rows="6" class="w-full p-4 rounded-xl shiny-border text-lg" placeholder="Type your detailed notes here..."></textarea>
+                ${navBtns(1)}
+            </section>`;
+
+            html += `<section id="act-2" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 2: Scrambled Image</h2>
+                <p class="mb-6 text-lg font-medium">Order the 25 parts to form the complete image. Drag and drop pieces to swap them.</p>
+                
+                <div class="flex flex-col 2xl:flex-row gap-10 items-center justify-center">
+                    <div class="w-full 2xl:w-1/2 flex flex-col items-center">
+                        <div id="puzzle-grid" class="mb-6 shadow-2xl"></div>
+                        <div class="flex justify-center gap-8 items-center w-full max-w-[800px] bg-slate-100 dark:bg-slate-800 p-4 rounded-xl border border-slate-300 dark:border-slate-600">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid fa-clock text-2xl text-slate-600 dark:text-slate-400"></i>
+                                <span class="font-mono text-3xl font-black text-slate-800 dark:text-white" id="puzzle-timer">00:00</span>
+                            </div>
+                            <button onclick="initPuzzle()" class="px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-bold transition text-xl shadow-md">
+                                <i class="fa-solid fa-rotate-right mr-2"></i> Do Again
+                            </button>
+                        </div>
+                    </div>
+                    <div class="w-full 2xl:w-1/2 flex flex-col items-center">
+                        <p class="text-2xl font-black mb-4 text-slate-800 dark:text-white">Target Image:</p>
+                        <!-- Target Image strictly using Image2.jpg and doubled max-width -->
+                        <img src="Image2.jpg" class="w-full max-w-[800px] rounded-xl border-4 border-slate-300 dark:border-slate-600 shadow-2xl object-cover" alt="Target Image" ${imgErr}>
+                    </div>
+                </div>
+                ${navBtns(2)}
+            </section>`;
+
+            // Act 3
+            html += `<section id="act-3" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 3: I See, I Think, I Wonder</h2>
+                <p class="mb-6 text-lg font-medium">Look at the target image again and complete the thinking routine.</p>
+                <div class="media-container mb-8 max-w-[800px] border-4 border-slate-300 dark:border-slate-600 rounded-xl">
+                    <img src="Image2.jpg" alt="Thinking Routine Image" ${imgErr}>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="bg-blue-50 dark:bg-slate-800 p-6 rounded-xl border border-blue-200 dark:border-blue-900 shadow-sm">
+                        <label class="block font-black text-xl text-blue-600 dark:text-blue-400 mb-4"><i class="fa-solid fa-eye mr-2"></i> I See...</label>
+                        <textarea class="act3-input w-full p-4 rounded-xl shiny-border" rows="5" placeholder="List what you see..."></textarea>
+                    </div>
+                    <div class="bg-purple-50 dark:bg-slate-800 p-6 rounded-xl border border-purple-200 dark:border-purple-900 shadow-sm">
+                        <label class="block font-black text-xl text-purple-600 dark:text-purple-400 mb-4"><i class="fa-solid fa-brain mr-2"></i> I Think...</label>
+                        <textarea class="act3-input w-full p-4 rounded-xl shiny-border" rows="5" placeholder="Write what you think..."></textarea>
+                    </div>
+                    <div class="bg-amber-50 dark:bg-slate-800 p-6 rounded-xl border border-amber-200 dark:border-amber-900 shadow-sm">
+                        <label class="block font-black text-xl text-amber-600 dark:text-amber-400 mb-4"><i class="fa-solid fa-question-circle mr-2"></i> I Wonder...</label>
+                        <textarea class="act3-input w-full p-4 rounded-xl shiny-border" rows="5" placeholder="What questions do you have?"></textarea>
+                    </div>
+                </div>
+                ${navBtns(3)}
+            </section>`;
+
+            html += `<section id="act-4" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 4: Present to Past Tense</h2>
+                <p class="mb-6 text-lg font-medium">Rewrite the complete sentence in the past tense.</p>
+                <div class="mb-8 bg-blue-100 dark:bg-blue-900/40 p-6 rounded-xl border-2 border-blue-300 dark:border-blue-700 shadow-sm">
+                    <h3 class="font-black text-xl mb-4 text-blue-900 dark:text-blue-100"><i class="fa-solid fa-book-open mr-2"></i> Verb Chart (Present -> Past)</h3>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-lg font-semibold text-slate-800 dark:text-slate-200">
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">is &rarr; was</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">are &rarr; were</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">watch &rarr; watched</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">like &rarr; liked</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">buy &rarr; bought</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">has &rarr; had</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">go &rarr; went</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">makes &rarr; made</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">thinks &rarr; thought</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">wins &rarr; won</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">see &rarr; saw</div>
+                        <div class="bg-white/50 dark:bg-black/20 p-2 rounded text-center">feel &rarr; felt</div>
+                    </div>
+                </div>
+                <div class="space-y-6">
+                    ${data.act4.map((item, i) => `
+                        <div class="flex flex-col lg:flex-row gap-4 lg:items-center bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+                            <span class="lg:w-1/2 text-lg font-bold text-slate-700 dark:text-slate-200"><span class="text-primary mr-2">${i+1}.</span> ${item.p}</span>
+                            <input type="text" id="act4-q${i}" class="act4-input lg:w-1/2 p-3 rounded-lg shiny-border w-full text-lg" placeholder="Rewrite in past tense...">
+                        </div>
+                    `).join('')}
+                </div>
+                ${navBtns(4)}
+            </section>`;
+
+            // Act 5
+            html += `<section id="act-5" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 5: Conversation</h2>
+                <p class="mb-6 text-lg font-medium">Complete the conversation. Select Person B's responses from the dropdowns.</p>
+                <div class="bg-slate-100 dark:bg-slate-800/80 p-6 md:p-8 rounded-2xl space-y-6 shadow-inner border border-slate-300 dark:border-slate-600">
+                    ${data.act5.personA.map((lineA, i) => `
+                        <div class="flex flex-col gap-3">
+                            <div class="bg-primary text-white p-4 rounded-2xl rounded-tl-none self-start max-w-[85%] shadow-md text-lg">
+                                <strong class="block mb-1 text-blue-200"><i class="fa-solid fa-user mr-2"></i>Person A:</strong> ${lineA}
+                            </div>
+                            <div class="self-end w-full max-w-[85%]">
+                                <select class="act5-select w-full p-4 rounded-2xl rounded-tr-none shiny-border text-lg font-medium shadow-md">
+                                    <option value="">-- Select Person B's response --</option>
+                                    ${[...data.act5.personB].sort(() => Math.random() - 0.5).map((opt) => `<option value="${opt.replace(/"/g, '&quot;')}">${opt}</option>`).join('')}
+                                </select>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                ${navBtns(5)}
+            </section>`;
+
+            // Act 6 (Skipping as requested to merge intro, but keeping numbering consistent by adding a placeholder or merging into intro logically. Wait, the prompt said "Act 6: Insert Image3... Only show in introduction." I will make Act 6 a brief transition or skip it in numbering. Prompt specifically listed Act 7 next. I will add Act 6 as a brief recap.)
+            html += `<section id="act-6" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 6: Image Review</h2>
+                <p class="text-lg font-medium mb-6">Review this image before continuing.</p>
+                <div class="media-container max-w-[800px] border-4 border-slate-300 dark:border-slate-600 rounded-xl">
+                    <img src="Image3.jpg" alt="Activity 6 Intro" ${imgErr}>
+                </div>
+                ${navBtns(6)}
+            </section>`;
+
+            html += `<section id="act-7" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 7: Scrambled Sentences</h2>
+                <p class="mb-6 text-lg font-medium">Drag and drop the words to form correct sentences describing movies. Click the <i class="fa-solid fa-volume-high text-primary"></i> icon to hear the correct sentence.</p>
+                <div class="space-y-8">
+                    ${data.act7.map((sentence, i) => {
+                        const words = sentence.replace('.', '').split(' ').sort(() => Math.random() - 0.5);
+                        return `
+                        <div class="p-6 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border-2 border-slate-200 dark:border-slate-600 shadow-md act7-container">
+                            <div class="flex flex-col md:flex-row gap-4 mb-4 items-start md:items-center">
+                                <div class="flex items-center gap-3 w-full md:w-auto">
+                                    <span class="font-black text-2xl text-slate-400 dark:text-slate-500">${i+1}.</span>
+                                    <button onclick="speakText('${sentence}')" class="p-3 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-400 dark:hover:bg-blue-800 transition shadow-sm" title="Listen">
+                                        <i class="fa-solid fa-volume-high text-xl"></i>
+                                    </button>
+                                </div>
+                                <div class="word-bank flex-grow w-full" ondrop="dropWord(event)" ondragover="allowDropWord(event)">
+                                    ${words.map((w, j) => `<div class="draggable-word act7-word text-lg" draggable="true" ondragstart="dragWord(event)" id="w-${i}-${j}">${w}</div>`).join('')}
+                                </div>
+                            </div>
+                            <div class="flex flex-wrap items-center bg-white dark:bg-slate-900 p-4 rounded-xl min-h-[70px] border-2 border-dashed border-primary sentence-dropzone shadow-inner" ondrop="dropWord(event)" ondragover="allowDropWord(event)" data-ans="${sentence.replace('.','')}">
+                                <span class="text-slate-400 dark:text-slate-500 italic pointer-events-none drop-hint text-lg">Drop words here in order...</span>
+                            </div>
+                        </div>
+                        `;
+                    }).join('')}
+                </div>
+                ${navBtns(7)}
+            </section>`;
+
+            const generateMissingTextHTML = () => {
+                let words = data.act8Text.split(' ');
+                let htmlStr = '';
+                for(let i=0; i<words.length; i++) {
+                    if((i + 1) % 12 === 0) {
+                        let cleanWord = words[i].replace(/[.,!?]/g, '');
+                        let punc = words[i].replace(cleanWord, '');
+                        htmlStr += `<input type="text" class="act8-input w-32 mx-2 p-1 text-center font-bold shiny-border rounded-lg inline-block text-lg" data-ans="${cleanWord.toLowerCase()}">${punc} `;
+                    } else {
+                        htmlStr += words[i] + ' ';
+                    }
+                }
+                return htmlStr;
+            };
+
+            html += `<section id="act-8" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 8: Listening and Reading</h2>
+                <div class="flex items-center gap-4 mb-8 bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                    <i class="fa-solid fa-headphones text-4xl text-indigo-600 dark:text-indigo-400 ml-2"></i>
+                    <audio controls class="w-full h-12" ${audErr}>
+                        <source src="Audio1.mp3" type="audio/mpeg">
+                    </audio>
+                </div>
+                <p class="mb-6 text-lg font-medium">Listen to the audio and fill in the missing words. Then, answer the questions below.</p>
+                
+                <div class="bg-amber-50 dark:bg-slate-800 p-8 rounded-2xl border-2 border-amber-200 dark:border-slate-600 mb-10 font-serif leading-loose text-xl shadow-inner text-slate-800 dark:text-slate-200">
+                    ${generateMissingTextHTML()}
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    ${data.act8Questions.map((q, i) => `
+                        <div class="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-md border border-slate-200 dark:border-slate-600">
+                            <p class="font-extrabold text-lg mb-4 text-slate-800 dark:text-white">${q.q}</p>
+                            <div class="space-y-3 act8-mcq-group text-lg" data-ans="${q.ans}">
+                                ${q.opts.map((opt, j) => `
+                                    <label class="flex items-center gap-4 p-3 rounded-lg border-2 border-transparent hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition">
+                                        <input type="radio" name="act8_q${i}" value="${j}" class="w-5 h-5 text-primary focus:ring-primary">
+                                        <span class="font-medium">${opt}</span>
+                                    </label>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+                ${navBtns(8)}
+            </section>`;
+
+            html += `<section id="act-9" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 9: Prefixes and Suffixes</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+                    <div class="bg-purple-100 dark:bg-purple-900/30 p-6 rounded-2xl border-2 border-purple-300 dark:border-purple-700 shadow-sm">
+                        <h3 class="font-black text-2xl text-purple-800 dark:text-purple-300 mb-4"><i class="fa-solid fa-backward mr-2"></i> Prefixes (Beginning)</h3>
+                        <ul class="text-lg space-y-3 font-medium text-purple-900 dark:text-purple-200">
+                            <li><strong class="bg-purple-200 dark:bg-purple-800 px-2 rounded">un-</strong> = not (e.g., unhappy)</li>
+                            <li><strong class="bg-purple-200 dark:bg-purple-800 px-2 rounded">re-</strong> = again (e.g., replay)</li>
+                            <li><strong class="bg-purple-200 dark:bg-purple-800 px-2 rounded">pre-</strong> = before (e.g., preview)</li>
+                        </ul>
+                    </div>
+                    <div class="bg-pink-100 dark:bg-pink-900/30 p-6 rounded-2xl border-2 border-pink-300 dark:border-pink-700 shadow-sm">
+                        <h3 class="font-black text-2xl text-pink-800 dark:text-pink-300 mb-4"><i class="fa-solid fa-forward mr-2"></i> Suffixes (End)</h3>
+                        <ul class="text-lg space-y-3 font-medium text-pink-900 dark:text-pink-200">
+                            <li><strong class="bg-pink-200 dark:bg-pink-800 px-2 rounded">-ful</strong> = full of (e.g., colorful)</li>
+                            <li><strong class="bg-pink-200 dark:bg-pink-800 px-2 rounded">-less</strong> = without (e.g., fearless)</li>
+                            <li><strong class="bg-pink-200 dark:bg-pink-800 px-2 rounded">-ly</strong> = how it is done (e.g., slowly)</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <p class="mb-6 text-lg font-medium">Complete the sentences by typing the correct prefix or suffix from the boxes above.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    ${data.act9.map((item, i) => `
+                        <div class="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm text-lg">
+                            <span class="font-black text-slate-400 w-8">${i+1}.</span>
+                            <span class="flex-grow font-medium leading-relaxed">${item.q.replace('___', `<input type="text" class="act9-input w-20 text-center shiny-border rounded mx-1 font-bold" data-ans="${item.a}">`)}</span>
+                        </div>
+                    `).join('')}
+                </div>
+                ${navBtns(9)}
+            </section>`;
+
+            // Act 10
+            html += `<section id="act-10" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 10: Paragraph Builder</h2>
+                <p class="mb-6 text-lg font-medium">Drag the sentences from the yellow box into the correct empty spaces in the text.</p>
+                
+                <div class="mb-10 p-6 bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-300 dark:border-amber-700 rounded-2xl flex flex-col gap-4 shadow-sm" id="act10-source">
+                    <p class="font-black text-amber-800 dark:text-amber-200 text-lg uppercase tracking-wider mb-2"><i class="fa-solid fa-hand-pointer mr-2"></i> Drag these sentences:</p>
+                    ${data.act10.draggables.map((s, i) => `
+                        <div class="act10-draggable p-4 bg-white dark:bg-slate-800 border-2 border-primary rounded-xl cursor-grab shadow-md font-bold text-lg text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700 transition" draggable="true" ondragstart="dragPara(event)" id="p-s-${i}" data-idx="${i}">
+                            <i class="fa-solid fa-grip-vertical text-slate-400 mr-3"></i> ${s}
+                        </div>
+                    `).join('')}
+                </div>
+
+                <div class="text-xl leading-loose p-8 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border-2 border-slate-200 dark:border-slate-700 shadow-inner font-medium">
+                    ${data.act10.textParts[0]}
+                    <span class="inline-flex min-w-[250px] min-h-[50px] border-b-4 border-dashed border-primary align-middle mx-2 bg-white/50 dark:bg-black/20 act10-drop rounded" ondrop="dropPara(event)" ondragover="allowDropPara(event)" data-ans="${data.act10.answers[0]}"></span>
+                    ${data.act10.textParts[1]}
+                    <span class="inline-flex min-w-[250px] min-h-[50px] border-b-4 border-dashed border-primary align-middle mx-2 bg-white/50 dark:bg-black/20 act10-drop rounded" ondrop="dropPara(event)" ondragover="allowDropPara(event)" data-ans="${data.act10.answers[1]}"></span>
+                    ${data.act10.textParts[2]}
+                    <span class="inline-flex min-w-[250px] min-h-[50px] border-b-4 border-dashed border-primary align-middle mx-2 bg-white/50 dark:bg-black/20 act10-drop rounded" ondrop="dropPara(event)" ondragover="allowDropPara(event)" data-ans="${data.act10.answers[2]}"></span>
+                    ${data.act10.textParts[3]}
+                </div>
+                ${navBtns(10)}
+            </section>`;
+
+            // Act 11
+            html += `<section id="act-11" class="activity-section hidden bg-white dark:bg-darkCard rounded-2xl shadow-lg p-8 border border-slate-200 dark:border-slate-700">
+                <h2 class="text-3xl font-extrabold mb-6 text-primary">Activity 11: Write an Email</h2>
+                <div class="flex flex-col md:flex-row justify-between gap-6 mb-6">
+                    <p class="flex-grow text-lg font-medium">Write an email message describing a recent movie you have seen. Use adjectives to describe the genre and the story.</p>
+                    <button onclick="toggleSampleText()" class="px-6 py-3 bg-indigo-100 text-indigo-800 hover:bg-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-200 dark:hover:bg-indigo-800 rounded-xl font-bold whitespace-nowrap transition shadow-sm text-lg border border-indigo-200 dark:border-indigo-700">
+                        <i class="fa-solid fa-eye mr-2"></i> Show Sample Text
+                    </button>
+                </div>
+                
+                <div id="sample-text" class="hidden mb-8 p-6 bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-200 dark:border-indigo-700 rounded-xl italic text-lg shadow-inner text-slate-700 dark:text-slate-300">
+                    <strong class="text-indigo-700 dark:text-indigo-400 text-xl block mb-2"><i class="fa-solid fa-envelope-open-text mr-2"></i> Sample Email:</strong>
+                    Hi Sarah,<br><br>
+                    Yesterday, I went to the cinema and saw a great science fiction movie. It was called "Star Journey". The story was very interesting and the special effects were amazing! It was a bit long, but it was never boring. The main actors were very talented. I really liked it.<br><br>
+                    Talk to you soon,<br>Alex
+                </div>
+
+                <div class="bg-slate-50 dark:bg-slate-900 p-6 rounded-2xl shadow-inner shiny-border">
+                    <div class="flex border-b-2 border-slate-200 dark:border-slate-700 pb-3 mb-3 items-center">
+                        <span class="text-slate-500 dark:text-slate-400 font-bold w-20 text-lg">To:</span> 
+                        <input type="text" class="bg-transparent outline-none flex-grow text-lg font-medium" placeholder="friend@email.com">
+                    </div>
+                    <div class="flex border-b-2 border-slate-200 dark:border-slate-700 pb-3 mb-4 items-center">
+                        <span class="text-slate-500 dark:text-slate-400 font-bold w-20 text-lg">Subject:</span> 
+                        <input type="text" class="bg-transparent outline-none flex-grow text-lg font-medium" placeholder="A great movie I watched">
+                    </div>
+                    <textarea id="act11-text" rows="10" class="w-full bg-transparent outline-none resize-y text-lg font-medium placeholder-slate-400" placeholder="Start typing your email here..."></textarea>
+                </div>
+                ${navBtns(11)}
+            </section>`;
+
+            wrapper.innerHTML = html;
+        };
+
+        const navigate = (index) => {
+            document.querySelectorAll('.activity-section').forEach(sec => sec.classList.add('hidden'));
+            document.getElementById(`act-${index}`).classList.remove('hidden');
+            currentActivity = index;
+            
+            const progress = (index / totalActivities) * 100;
+            document.getElementById('progress-bar').style.width = `${progress}%`;
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if(index === 2 && !puzzleTimerInterval) startPuzzle();
+        };
+
+        document.getElementById('theme-toggle').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+
+        const initAct5Logic = () => {
+            const selects = Array.from(document.querySelectorAll('.act5-select'));
+            selects.forEach(select => {
+                select.addEventListener('change', () => {
+                    const selectedValues = selects.map(s => s.value).filter(v => v !== '');
+                    selects.forEach(sel => {
+                        Array.from(sel.options).forEach(opt => {
+                            if(opt.value === '') return;
+                            if(selectedValues.includes(opt.value) && sel.value !== opt.value) {
+                                opt.disabled = true;
+                                opt.style.color = '#94a3b8';
+                            } else {
+                                opt.disabled = false;
+                                opt.style.color = '';
+                            }
+                        });
+                    });
+                });
+            });
+        };
+
+        let draggedWord = null;
+        let draggedPara = null;
+
+        const dragWord = (e) => { draggedWord = e.target; e.dataTransfer.setData('text/plain', e.target.id); }
+        const allowDropWord = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+        const dropWord = (e) => {
+            e.preventDefault();
+            const target = e.currentTarget;
+            target.classList.remove('drag-over');
+            if (draggedWord) {
+                target.appendChild(draggedWord);
+                const hint = target.querySelector('.drop-hint');
+                if(hint) hint.style.display = 'none';
+            }
+            draggedWord = null;
+        }
+        
+        document.addEventListener('dragleave', (e) => {
+            if(e.target.classList && (e.target.classList.contains('sentence-dropzone') || e.target.classList.contains('word-bank'))) {
+                e.target.classList.remove('drag-over');
+            }
+        });
+
+        const dragPara = (e) => { draggedPara = e.target; e.dataTransfer.setData('text/plain', e.target.id); }
+        const allowDropPara = (e) => { e.preventDefault(); }
+        const dropPara = (e) => {
+            e.preventDefault();
+            const target = e.currentTarget;
+            if (draggedPara && target.classList.contains('act10-drop')) {
+                if (target.children.length > 0) {
+                    document.getElementById('act10-source').appendChild(target.children[0]);
+                }
+                target.appendChild(draggedPara);
+                draggedPara.style.border = 'none';
+                draggedPara.style.padding = '0';
+                draggedPara.style.backgroundColor = 'transparent';
+                target.style.border = 'none';
+            }
+            draggedPara = null;
+        }
+
+        const toggleSampleText = () => {
+            const el = document.getElementById('sample-text');
+            el.classList.toggle('hidden');
+        };
+
+        let puzzlePieces = [];
+        const initPuzzle = () => {
+            clearInterval(puzzleTimerInterval);
+            puzzleTimerInterval = null;
+            puzzleSeconds = 0;
+            document.getElementById('puzzle-timer').innerText = '00:00';
+            
+            const grid = document.getElementById('puzzle-grid');
+            grid.innerHTML = '';
+            puzzlePieces = [];
+            
+            for(let i=0; i<5; i++){
+                for(let j=0; j<5; j++){
+                    puzzlePieces.push({id: i*5+j, x: j, y: i});
+                }
+            }
+            
+            puzzlePieces.sort(() => Math.random() - 0.5);
+            
+            puzzlePieces.forEach((p, idx) => {
+                const div = document.createElement('div');
+                div.className = 'puzzle-piece';
+                
+                let img = new Image();
+                img.src = 'Image2.jpg';
+                img.onerror = () => div.classList.add('fallback-bg');
+                
+                div.style.backgroundPosition = `${p.x * 25}% ${p.y * 25}%`;
+                div.draggable = true;
+                div.dataset.index = idx;
+                div.dataset.correctId = p.id;
+                
+                div.addEventListener('dragstart', handlePuzzleDragStart);
+                div.addEventListener('dragover', handlePuzzleDragOver);
+                div.addEventListener('drop', handlePuzzleDrop);
+                div.addEventListener('dragenter', (e) => e.target.classList.add('drag-over'));
+                div.addEventListener('dragleave', (e) => e.target.classList.remove('drag-over'));
+                
+                grid.appendChild(div);
+            });
+            startPuzzle();
+        };
+
+        let draggedPuzzlePiece = null;
+        function handlePuzzleDragStart(e) { draggedPuzzlePiece = this; }
+        function handlePuzzleDragOver(e) { e.preventDefault(); }
+        function handlePuzzleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            if (draggedPuzzlePiece !== this) {
+                const tempPos = this.style.backgroundPosition;
+                const tempId = this.dataset.correctId;
+                
+                this.style.backgroundPosition = draggedPuzzlePiece.style.backgroundPosition;
+                this.dataset.correctId = draggedPuzzlePiece.dataset.correctId;
+                
+                draggedPuzzlePiece.style.backgroundPosition = tempPos;
+                draggedPuzzlePiece.dataset.correctId = tempId;
+                
+                checkPuzzle();
+            }
+        }
+
+        const startPuzzle = () => {
+            if(!puzzleTimerInterval) {
+                puzzleTimerInterval = setInterval(() => {
+                    puzzleSeconds++;
+                    let m = Math.floor(puzzleSeconds/60).toString().padStart(2, '0');
+                    let s = (puzzleSeconds%60).toString().padStart(2, '0');
+                    const timerEl = document.getElementById('puzzle-timer');
+                    if(timerEl) timerEl.innerText = `${m}:${s}`;
+                }, 1000);
+            }
+        };
+
+        const checkPuzzle = () => {
+            const pieces = document.querySelectorAll('.puzzle-piece');
+            let isCorrect = true;
+            pieces.forEach((p, i) => {
+                if(parseInt(p.dataset.correctId) !== i) isCorrect = false;
+            });
+            if(isCorrect) {
+                clearInterval(puzzleTimerInterval);
+                showToast(`Puzzle solved in ${document.getElementById('puzzle-timer').innerText}!`);
+                pieces.forEach(p => { p.draggable = false; p.style.border = 'none'; p.style.cursor = 'default'; });
+            }
+        };
+
+        const markElement = (el, isCorrect) => {
+            el.disabled = true;
+            el.classList.remove('shiny-border');
+            if(isCorrect) el.classList.add('correct-input');
+            else el.classList.add('incorrect-input');
+        };
+
+        const checkAnswers = (actNum) => {
+            let score = 0;
+            let total = 0;
+
+            const btn = document.getElementById(`check-btn-${actNum}`);
+            if(btn) btn.disabled = true;
+
+            switch(actNum) {
+                case 1:
+                    const n = document.getElementById('act1-notes');
+                    if(n.value.trim().length > 10) { score=1; total=1; markElement(n, true); }
+                    else { total=1; markElement(n, false); showToast("Notes are too short."); }
+                    break;
+                case 2:
+                    let isPuzCorrect = true;
+                    document.querySelectorAll('.puzzle-piece').forEach((p, i) => {
+                        if(parseInt(p.dataset.correctId) !== i) isPuzCorrect = false;
+                        p.draggable = false;
+                    });
+                    total = 1; score = isPuzCorrect ? 1 : 0;
+                    if(!isPuzCorrect) showToast("Puzzle is not completely solved.");
+                    clearInterval(puzzleTimerInterval);
+                    break;
+                case 3:
+                    total = 3;
+                    document.querySelectorAll('.act3-input').forEach(ta => {
+                        if(ta.value.trim().length > 3) { score++; markElement(ta, true); }
+                        else markElement(ta, false);
+                    });
+                    break;
+                case 4:
+                    total = data.act4.length;
+                    document.querySelectorAll('.act4-input').forEach((inp, i) => {
+                        let userAns = inp.value.trim().toLowerCase().replace(/[.,]/g,'');
+                        let correctAns = data.act4[i].ans.toLowerCase().replace(/[.,]/g,'');
+                        if(userAns === correctAns) { score++; markElement(inp, true); }
+                        else {
+                            markElement(inp, false);
+                            inp.value = `${inp.value} (Correct: ${data.act4[i].ans})`;
+                        }
+                    });
+                    break;
+                case 5:
+                    total = data.act5.personA.length;
+                    const bLines = data.act5.personB;
+                    document.querySelectorAll('.act5-select').forEach((sel, i) => {
+                        if(sel.value === bLines[i]) { score++; markElement(sel, true); }
+                        else markElement(sel, false);
+                    });
+                    break;
+                case 6:
+                    score=1; total=1; 
+                    break;
+                case 7:
+                    total = data.act7.length;
+                    document.querySelectorAll('.sentence-dropzone').forEach((dz, i) => {
+                        let userStr = Array.from(dz.children).filter(c=>!c.classList.contains('drop-hint')).map(c=>c.innerText).join(' ').trim().toLowerCase();
+                        let ansStr = dz.dataset.ans.toLowerCase();
+                        if(userStr === ansStr) { 
+                            score++; 
+                            dz.classList.add('correct-input');
+                        }
+                        else { 
+                            dz.classList.add('incorrect-input'); 
+                        }
+                        dz.querySelectorAll('.draggable-word').forEach(w => w.draggable = false);
+                        document.querySelectorAll(`#act-7 .word-bank .draggable-word`).forEach(w => w.draggable = false);
+                    });
+                    break;
+                case 8:
+                    const txtInputs = document.querySelectorAll('.act8-input');
+                    const mcqGroups = document.querySelectorAll('.act8-mcq-group');
+                    total = txtInputs.length + mcqGroups.length;
+                    
+                    txtInputs.forEach(inp => {
+                        if(inp.value.trim().toLowerCase() === inp.dataset.ans) { score++; markElement(inp, true); }
+                        else { markElement(inp, false); inp.value = inp.dataset.ans; }
+                    });
+
+                    mcqGroups.forEach(group => {
+                        const checked = group.querySelector('input:checked');
+                        const ans = group.dataset.ans;
+                        group.querySelectorAll('input').forEach(r => r.disabled = true);
+                        if(checked && checked.value === ans) {
+                            score++;
+                            checked.parentElement.classList.add('correct-input');
+                        } else {
+                            if(checked) checked.parentElement.classList.add('incorrect-input');
+                            group.querySelector(`input[value="${ans}"]`).parentElement.classList.add('correct-input');
+                        }
+                    });
+                    break;
+                case 9:
+                    total = data.act9.length;
+                    document.querySelectorAll('.act9-input').forEach(inp => {
+                        if(inp.value.trim().toLowerCase() === inp.dataset.ans) { score++; markElement(inp, true); }
+                        else { markElement(inp, false); inp.value = inp.dataset.ans; }
+                    });
+                    break;
+                case 10:
+                    total = 3;
+                    document.querySelectorAll('.act10-drop').forEach(drop => {
+                        if(drop.children.length > 0) {
+                            let droppedItem = drop.children[0];
+                            droppedItem.draggable = false;
+                            if(droppedItem.dataset.idx === drop.dataset.ans) {
+                                score++;
+                                drop.classList.add('correct-input');
+                            } else {
+                                drop.classList.add('incorrect-input');
+                            }
+                        } else {
+                            drop.classList.add('incorrect-input');
+                        }
+                    });
+                    document.querySelectorAll('.act10-draggable').forEach(d => d.draggable = false);
+                    break;
+                case 11:
+                    showToast("Remember to check for spelling, punctuation, grammar, and capitalization!");
+                    const text = document.getElementById('act11-text');
+                    total = 1;
+                    if(text.value.trim().length > 20) { score=1; markElement(text, true); }
+                    else { markElement(text, false); }
+                    break;
+            }
+
+            let percentage = total > 0 ? (score / total) * 100 : 0;
+            activityScores[actNum] = percentage;
+            if(btn) btn.innerText = `Score: ${Math.round(percentage)}%`;
+            if(btn) btn.classList.replace('bg-emerald-500', 'bg-slate-600');
+        };
+
+        const submitWork = () => {
+            const name = document.getElementById('student-name').value.trim();
+            if(!name) { showToast("Please enter your name at the top before submitting."); window.scrollTo(0,0); return; }
+
+            for(let i=1; i<=totalActivities; i++) {
+                if(activityScores[i] === null) checkAnswers(i);
+            }
+
+            document.getElementById('student-info').classList.add('hidden');
+            document.getElementById('activities-wrapper').classList.add('hidden');
+            const resSection = document.getElementById('results-section');
+            resSection.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            let totalPerc = 0;
+            let count = 0;
+            let chartLabels = [];
+            let chartData = [];
+            let bgColors = [];
+
+            for(let i=1; i<=totalActivities; i++) {
+                if(i === 6) continue; 
+                totalPerc += activityScores[i];
+                count++;
+                chartLabels.push(`Act ${i}`);
+                chartData.push(activityScores[i]);
+                
+                let s = activityScores[i];
+                if(s >= 80) bgColors.push('rgba(34, 197, 94, 0.8)'); 
+                else if(s >= 60) bgColors.push('rgba(234, 179, 8, 0.8)'); 
+                else bgColors.push('rgba(239, 68, 68, 0.8)'); 
+            }
+
+            let finalScore = totalPerc / count;
+            document.getElementById('final-score-display').innerText = `${Math.round(finalScore)}%`;
+
+            const ctx = document.getElementById('resultsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        label: 'Score per Activity (%)',
+                        data: chartData,
+                        backgroundColor: bgColors,
+                        borderColor: bgColors.map(c => c.replace('0.8', '1')),
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            max: 100,
+                            grid: { color: 'rgba(156, 163, 175, 0.2)' }
+                        },
+                        x: { grid: { display: false } }
+                    },
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) { return context.parsed.y + '%'; }
+                            }
+                        }
+                    }
+                }
+            });
+
+            let fb = document.getElementById('overall-feedback');
+            if(finalScore >= 90) fb.innerHTML = `<span class="text-green-600 dark:text-green-400">Excellent job, ${name}!</span> You have a fantastic understanding of movie vocabulary and grammar.`;
+            else if(finalScore >= 70) fb.innerHTML = `<span class="text-yellow-600 dark:text-yellow-400">Good work, ${name}.</span> You grasp most concepts well, but there is room for review.`;
+            else fb.innerHTML = `<span class="text-red-600 dark:text-red-400">Keep practicing, ${name}.</span> Reviewing vocabulary and grammar rules will help you improve.`;
+
+            const recs = [
+                { cond: activityScores[1] < 100, text: "Practice taking brief notes while listening to native speakers to catch main ideas quickly." },
+                { cond: activityScores[4] < 80, text: "Review regular and irregular past tense verbs. Write 5 daily activities in the past tense." },
+                { cond: activityScores[5] < 80, text: "Focus on conversational flow. Try reading dialogues aloud with a partner." },
+                { cond: activityScores[7] < 80, text: "Review sentence structure and word order (Subject + Verb + Adjective + Noun)." },
+                { cond: activityScores[8] < 80, text: "Read short stories in English to improve using context clues for missing words." },
+                { cond: activityScores[9] < 100, text: "Create flashcards for common prefixes (un-, re-) and suffixes (-ful, -less)." },
+                { cond: activityScores[10] < 100, text: "Practice identifying transition words to understand the logical flow of paragraphs." },
+                { cond: activityScores[11] < 100, text: "Write short descriptive emails to a friend once a week using new movie adjectives." }
+            ];
+
+            let recHtml = '';
+            let recCount = 0;
+            recs.forEach(r => {
+                if(r.cond && recCount < 8) {
+                    recHtml += `<li class="flex items-start gap-4 p-3 bg-white dark:bg-slate-700/50 rounded-lg shadow-sm border border-slate-100 dark:border-slate-600"><i class="fa-solid fa-star text-amber-500 mt-1"></i> <span>${r.text}</span></li>`;
+                    recCount++;
+                }
+            });
+            if(recCount < 8) {
+                const generic = [
+                    "Watch English movies with English subtitles instead of dubbing.",
+                    "Practice pronouncing new adjectives out loud in front of a mirror.",
+                    "Read movie reviews online to see how critics describe films."
+                ];
+                generic.forEach(g => {
+                    if(recCount < 8) {
+                        recHtml += `<li class="flex items-start gap-4 p-3 bg-white dark:bg-slate-700/50 rounded-lg shadow-sm border border-slate-100 dark:border-slate-600"><i class="fa-solid fa-star text-amber-500 mt-1"></i> <span>${g}</span></li>`;
+                        recCount++;
+                    }
+                });
+            }
+            document.getElementById('recommendations-list').innerHTML = recHtml;
+        };
+
+        window.onload = () => {
+            generateUI();
+            initAct5Logic();
+            initPuzzle();
+            navigate(0); 
+        };
+    </script>
+</body>
+</html>
